@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>2019书单</title>
+    <url>/2019/02/16/book/20190216-2019%E4%B9%A6%E5%8D%95/</url>
+    <content><![CDATA[<ul>
+<li>从零开始学架构 -李运华 <a href="https://book.douban.com/subject/30335935/">douban 8.5</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>书单</category>
+        <category>book</category>
+      </categories>
+      <tags>
+        <tag>2019</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>page</title>
+    <url>/2021/01/14/book/20210114-%E4%BF%9D%E9%99%A9%E5%AD%A601/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>book</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>zk实现分布式锁</title>
+    <url>/2019/04/22/distribute/20190422-zk%E5%AE%9E%E7%8E%B0%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/</url>
+    <content><![CDATA[<h3 id="分布式锁实现"><a href="#分布式锁实现" class="headerlink" title="分布式锁实现"></a>分布式锁实现</h3><ul>
+<li>基于数据库</li>
+<li>基于redis</li>
+<li>基于zookeeper</li>
+</ul>
+<h4 id="基于zk实现分布式锁"><a href="#基于zk实现分布式锁" class="headerlink" title="基于zk实现分布式锁"></a>基于zk实现分布式锁</h4><h5 id="zk介绍"><a href="#zk介绍" class="headerlink" title="zk介绍"></a>zk介绍</h5><ul>
+<li>Zookeeper（业界简称zk）是一种提供配置管理、分布式协同以及命名的中心化服务</li>
+<li>Zookeeper提供一个多层级的节点命名空间（节点称为znode），每个节点都用一个以斜杠（/）分隔的路径表示，而且每个节点都有父节点（根节点除外），非常类似于文件系统</li>
+<li>集群部署 2n+1台机器<blockquote>
+<p>过半机器是可用的（能够容忍一定的机器故障），那么zookeeper本身仍然是可用的。客户端在使用zookeeper时，需要知道集群机器列表，通过与集群中的某一台机器建立TCP连接来使用服务，客户端使用这个TCP链接来发送请求、获取结果、获取监听事件以及发送心跳包。如果这个连接异常断开了，客户端可以连接到另外的机器上</p>
+<ul>
+<li>读请求<br/><br>客户端的读请求可以被集群中的任意一台机器处理，如果读请求在节点上注册了监听器，这个监听器也是由所连接的zookeeper机器来处理.</li>
+<li>写请求<br/><br>对于写请求，这些请求会同时发给其他zookeeper机器并且达成一致后，请求才会返回成功。</li>
+</ul>
+</blockquote>
+</li>
+<li>有序性<blockquote>
+<p>有序性是zookeeper中非常重要的一个特性，所有的更新都是全局有序的，每个更新都有一个唯一的时间戳，这个时间戳称为zxid（Zookeeper Transaction Id）。而读请求只会相对于更新有序，也就是读请求的返回结果中会带有这个zookeeper最新的zxid</p>
+</blockquote>
+</li>
+</ul>
+<p><img src="http://ww1.sinaimg.cn/large/007DdbdYly1g2ba2zuq19j30h905kmxt.jpg" alt=""></p>
+<h5 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h5><ul>
+<li>节点性质 <br/><ol>
+<li>有序节点：假如当前有一个父节点为/lock，我们可以在这个父节点下面创建子节点；zookeeper提供了一个可选的有序特性，例如我们可以创建子节点“/lock/node-”并且指明有序，那么zookeeper在生成子节点时会根据当前的子节点数量自动添加整数序号，也就是说如果是第一个创建的子节点，那么生成的子节点为/lock/node-0000000000，下一个节点则为/lock/node-0000000001，依次类推。</li>
+<li>临时节点：客户端可以建立一个临时节点，在会话结束或者会话超时后，zookeeper会自动删除该节点。</li>
+<li>事件监听：在读取数据时，我们可以同时对节点设置事件监听，当节点数据或结构变化时，zookeeper会通知客户端。当前zookeeper有如下四种事件：1）节点创建；2）节点删除；3）节点数据修改；4）子节点变更。</li>
+</ol>
+</li>
+<li>实现<ol>
+<li>客户端连接zookeeper，并在/lock下创建临时的且有序的子节点，第一个客户端对应的子节点为/lock/lock-0000000000，第二个为/lock/lock-0000000001，以此类推。</li>
+<li>客户端获取/lock下的子节点列表，判断自己创建的子节点是否为当前子节点列表中序号最小的子节点，如果是则认为获得锁，否则监听/lock的子节点变更消息，获得子节点变更通知后重复此步骤直至获得锁；</li>
+<li>执行业务代码；</li>
+<li>完成业务流程后，删除对应的子节点释放锁。</li>
+</ol>
+</li>
+<li>问题<blockquote>
+<p>步骤1中创建的临时节点能够保证在故障的情况下锁也能被释放，考虑这么个场景：假如客户端a当前创建的子节点为序号最小的节点，获得锁之后客户端所在机器宕机了，客户端没有主动删除子节点；如果创建的是永久的节点，那么这个锁永远不会释放，导致死锁；由于创建的是临时节点，客户端宕机后，过了一定时间zookeeper没有收到客户端的心跳包判断会话失效，将临时节点删除从而释放锁。</p>
+</blockquote>
+</li>
+<li>优化<blockquote>
+<p>假如当前有1000个节点在等待锁，如果获得锁的客户端释放锁时，这1000个客户端都会被唤醒，这种情况称为“羊群效应”；在这种羊群效应中，zookeeper需要通知1000个客户端，这会阻塞其他的操作，最好的情况应该只唤醒新的最小节点对应的客户端。应该怎么做呢？在设置事件监听时，每个客户端应该对刚好在它之前的子节点设置事件监听，例如子节点列表为/lock/lock-0000000000、/lock/lock-0000000001、/lock/lock-0000000002，序号为1的客户端监听序号为0的子节点删除消息，序号为2的监听序号为1的子节点删除消息。</p>
+</blockquote>
+</li>
+<li><strong>最终算法</strong><ol>
+<li>客户端连接zookeeper，并在/lock下创建临时的且有序的子节点，第一个客户端对应的子节点为/lock/lock-0000000000，第二个为/lock/lock-0000000001，以此类推。</li>
+<li>客户端获取/lock下的子节点列表，判断自己创建的子节点是否为当前子节点列表中序号最小的子节点，如果是则认为获得锁，否则监听刚好在自己之前一位的子节点删除消息，获得子节点变更通知后重复此步骤直至获得锁；</li>
+<li>执行业务代码；</li>
+<li>完成业务流程后，删除对应的子节点释放锁。<h5 id="Curator源码剖析"><a href="#Curator源码剖析" class="headerlink" title="Curator源码剖析"></a>Curator源码剖析</h5></li>
+</ol>
+</li>
+<li>引包<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.curator&lt;&#x2F;groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;curator-recipes&lt;&#x2F;artifactId&gt;</span><br><span class="line">    &lt;version&gt;4.0.0&lt;&#x2F;version&gt;</span><br><span class="line">&lt;&#x2F;dependency&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>源码</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public static void main(String[] args) throws Exception &#123;</span><br><span class="line">    &#x2F;&#x2F;创建zookeeper的客户端</span><br><span class="line">    RetryPolicy retryPolicy &#x3D; new ExponentialBackoffRetry(1000, 3);</span><br><span class="line">    CuratorFramework client &#x3D; CuratorFrameworkFactory.newClient(&quot;10.21.41.181:2181,10.21.42.47:2181,10.21.49.252:2181&quot;, retryPolicy);</span><br><span class="line">    client.start();</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;创建分布式锁, 锁空间的根节点路径为&#x2F;curator&#x2F;lock</span><br><span class="line">    InterProcessMutex mutex &#x3D; new InterProcessMutex(client, &quot;&#x2F;curator&#x2F;lock&quot;);</span><br><span class="line">    mutex.acquire();</span><br><span class="line">    &#x2F;&#x2F;获得了锁, 进行业务流程</span><br><span class="line">    System.out.println(&quot;Enter mutex&quot;);</span><br><span class="line">    &#x2F;&#x2F;完成业务流程, 释放锁</span><br><span class="line">    mutex.release();</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F;关闭客户端</span><br><span class="line">    client.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>步骤简单 核心mutex.acquire() 和 mutex.release();</p>
+<p>mutex.acquire()</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x2F;*</span><br><span class="line"> * 获取锁，当锁被占用时会阻塞等待，这个操作支持同线程的可重入（也就是重复获取锁），acquire的次数需要与release的次数相同。</span><br><span class="line"> * @throws Exception ZK errors, connection interruptions</span><br><span class="line"> *&#x2F;</span><br><span class="line">@Override</span><br><span class="line">public void acquire() throws Exception</span><br><span class="line">&#123;</span><br><span class="line">    if ( !internalLock(-1, null) )</span><br><span class="line">    &#123;</span><br><span class="line">        throw new IOException(&quot;Lost connection while trying to acquire lock: &quot; + basePath);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>internalLock</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">private boolean internalLock(long time, TimeUnit unit) throws Exception</span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;这里处理同线程的可重入性，如果已经获得锁，那么只是在对应的数据结构中增加acquire的次数统计，直接返回成功</span><br><span class="line">    Thread currentThread &#x3D; Thread.currentThread();</span><br><span class="line">    LockData lockData &#x3D; threadData.get(currentThread);</span><br><span class="line">    if ( lockData !&#x3D; null )</span><br><span class="line">    &#123;</span><br><span class="line">        &#x2F;&#x2F; re-entering</span><br><span class="line">        lockData.lockCount.incrementAndGet();</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;这里才真正去zookeeper中获取锁</span><br><span class="line">    String lockPath &#x3D; internals.attemptLock(time, unit, getLockNodeBytes());</span><br><span class="line">    if ( lockPath !&#x3D; null )</span><br><span class="line">    &#123;</span><br><span class="line">        &#x2F;&#x2F;获得锁之后，记录当前的线程获得锁的信息，在重入时只需在LockData中增加次数统计即可</span><br><span class="line">        LockData newLockData &#x3D; new LockData(currentThread, lockPath);</span><br><span class="line">        threadData.put(currentThread, newLockData);</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;在阻塞返回时仍然获取不到锁，这里上下文的处理隐含的意思为zookeeper通信异常</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>zookeeper获取锁</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">String attemptLock(long time, TimeUnit unit, byte[] lockNodeBytes) throws Exception</span><br><span class="line">&#123;</span><br><span class="line">    &#x2F;&#x2F;参数初始化，此处省略</span><br><span class="line">    &#x2F;&#x2F;...</span><br><span class="line">   </span><br><span class="line">    &#x2F;&#x2F;自旋获取锁</span><br><span class="line">    while ( !isDone )</span><br><span class="line">    &#123;</span><br><span class="line">        isDone &#x3D; true;</span><br><span class="line"></span><br><span class="line">        try</span><br><span class="line">        &#123;</span><br><span class="line">            &#x2F;&#x2F;在锁空间下创建临时且有序的子节点</span><br><span class="line">            ourPath &#x3D; driver.createsTheLock(client, path, localLockNodeBytes);</span><br><span class="line">            &#x2F;&#x2F;判断是否获得锁（子节点序号最小），获得锁则直接返回，否则阻塞等待前一个子节点删除通知</span><br><span class="line">            hasTheLock &#x3D; internalLockLoop(startMillis, millisToWait, ourPath);</span><br><span class="line">        &#125;</span><br><span class="line">        catch ( KeeperException.NoNodeException e )</span><br><span class="line">        &#123;</span><br><span class="line">            &#x2F;&#x2F;对于NoNodeException，代码中确保了只有发生session过期才会在这里抛出NoNodeException，因此这里根据重试策略进行重试</span><br><span class="line">            if ( client.getZookeeperClient().getRetryPolicy().allowRetry(retryCount++, System.currentTimeMillis() - startMillis, RetryLoop.getDefaultRetrySleeper()) )</span><br><span class="line">            &#123;</span><br><span class="line">                isDone &#x3D; false;</span><br><span class="line">            &#125;</span><br><span class="line">            else</span><br><span class="line">            &#123;</span><br><span class="line">                throw e;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;如果获得锁则返回该子节点的路径</span><br><span class="line">    if ( hasTheLock )</span><br><span class="line">    &#123;</span><br><span class="line">        return ourPath;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return null;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>两步</p>
+</li>
+</ul>
+<ol>
+<li>driver.createsTheLock：创建临时且有序的子节点，里面实现比较简单不做展开，主要关注几种节点的模式：1）PERSISTENT（永久）；2）PERSISTENT_SEQUENTIAL（永久且有序）；3）EPHEMERAL（临时）；4）EPHEMERAL_SEQUENTIAL（临时且有序）。</li>
+<li>internalLockLoop：阻塞等待直到获得锁。</li>
+</ol>
+<p>internalLockLoop<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x2F;&#x2F;自旋直至获得锁</span><br><span class="line">while ( (client.getState() &#x3D;&#x3D; CuratorFrameworkState.STARTED) &amp;&amp; !haveTheLock )</span><br><span class="line">&#123;</span><br><span class="line">    &#x2F;&#x2F;获取所有的子节点列表，并且按序号从小到大排序</span><br><span class="line">    List&lt;String&gt;        children &#x3D; getSortedChildren();</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F;根据序号判断当前子节点是否为最小子节点</span><br><span class="line">    String              sequenceNodeName &#x3D; ourPath.substring(basePath.length() + 1); &#x2F;&#x2F; +1 to include the slash</span><br><span class="line">    PredicateResults    predicateResults &#x3D; driver.getsTheLock(client, children, sequenceNodeName, maxLeases);</span><br><span class="line">    if ( predicateResults.getsTheLock() )</span><br><span class="line">    &#123;</span><br><span class="line">        &#x2F;&#x2F;如果为最小子节点则认为获得锁</span><br><span class="line">        haveTheLock &#x3D; true;</span><br><span class="line">    &#125;</span><br><span class="line">    else</span><br><span class="line">    &#123;</span><br><span class="line">        &#x2F;&#x2F;否则获取前一个子节点</span><br><span class="line">        String  previousSequencePath &#x3D; basePath + &quot;&#x2F;&quot; + predicateResults.getPathToWatch();</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;这里使用对象监视器做线程同步，当获取不到锁时监听前一个子节点删除消息并且进行wait()，当前一个子节点删除（也就是锁释放）时，回调会通过notifyAll唤醒此线程，此线程继续自旋判断是否获得锁</span><br><span class="line">        synchronized(this)</span><br><span class="line">        &#123;</span><br><span class="line">            try </span><br><span class="line">            &#123;</span><br><span class="line">                &#x2F;&#x2F;这里使用getData()接口而不是checkExists()是因为，如果前一个子节点已经被删除了那么会抛出异常而且不会设置事件监听器，而checkExists虽然也可以获取到节点是否存在的信息但是同时设置了监听器，这个监听器其实永远不会触发，对于zookeeper来说属于资源泄露</span><br><span class="line">                client.getData().usingWatcher(watcher).forPath(previousSequencePath);</span><br><span class="line"></span><br><span class="line">                &#x2F;&#x2F;如果设置了阻塞等待的时间</span><br><span class="line">                if ( millisToWait !&#x3D; null )</span><br><span class="line">                &#123;</span><br><span class="line">                    millisToWait -&#x3D; (System.currentTimeMillis() - startMillis);</span><br><span class="line">                    startMillis &#x3D; System.currentTimeMillis();</span><br><span class="line">                    if ( millisToWait &lt;&#x3D; 0 )</span><br><span class="line">                    &#123;</span><br><span class="line">                        doDelete &#x3D; true;    &#x2F;&#x2F; 等待时间到达，删除对应的子节点</span><br><span class="line">                        break;</span><br><span class="line">                    &#125;</span><br><span class="line">                    </span><br><span class="line">                    &#x2F;&#x2F;等待相应的时间</span><br><span class="line">                    wait(millisToWait);</span><br><span class="line">                &#125;</span><br><span class="line">                else</span><br><span class="line">                &#123;</span><br><span class="line">                   &#x2F;&#x2F;永远等待</span><br><span class="line">                    wait();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            catch ( KeeperException.NoNodeException e ) </span><br><span class="line">            &#123;</span><br><span class="line">                &#x2F;&#x2F;上面使用getData来设置监听器时，如果前一个子节点已经被删除那么会抛出NoNodeException，只需要自旋一次即可，无需额外处理</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h4><pre><code>后面会增加redis分布式锁实现分析
+</code></pre>]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>distribute</category>
+      </categories>
+      <tags>
+        <tag>分布式</tag>
+        <tag>分布式锁</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>jdk常用工具总结</title>
+    <url>/2019/02/19/java/20190219-jdk%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>因为线上排查问题的需要,另一个也是基本技能,对java常用工具做一个小结.</p>
+<h4 id="常用的工具"><a href="#常用的工具" class="headerlink" title="常用的工具"></a>常用的工具</h4><ul>
+<li>jar</li>
+<li>jarsigner        签名工具,可对未签名的apk进行签名</li>
+<li>java  </li>
+<li>javac             编译工具</li>
+<li>javadoc         生成doc文档工具</li>
+<li>javafxpackager    打包工具,可以生成.exe文件</li>
+<li>javap             查看.class文件的字节码</li>
+<li>javapackager     jdk1.7后自带的一个打包工具，可以生成本地exe安装包</li>
+<li>jcmd              打印一个 Java 进程的类，线程以及虚拟机信息。适合用在脚本中。使用 jcmd - h 来查看使用方法。</li>
+<li>jconsole           提供 JVM 活动的图形化展示，包括线程使用，类使用以及垃圾回收（GC）信息</li>
+<li>jdb             调试工具,比较牛逼</li>
+<li>jdeps             包依赖分析工具</li>
+<li>jhat              帮助分析内存堆存储</li>
+<li>jinfo             访问 JVM 系统属性，同时可以动态修改这些属性。</li>
+<li>jmap              提供 JVM 内存使用信息，适用于脚本中。</li>
+<li>jmc             性能监控工具</li>
+<li>jps             显示当前所有java进程pid的命令</li>
+<li>jstack            提供 Java 进程内的线程堆栈信息。</li>
+<li>jstat             提供 Java 垃圾回收以及类加载信息。</li>
+<li>jstatd          一个rmi的server应用，用于监控jvm的创建和结束，并且提供接口让监控工具（如visualvm）可以远程连接到本机的jvms</li>
+<li>jvisualvm         监控 JVM 的可视化工具，剖析运行中的应用程序，分析 JVM 堆存储。</li>
+</ul>
+<p>从常用的开始讲起</p>
+<h4 id="javap"><a href="#javap" class="headerlink" title="javap"></a>javap</h4><p><a href="/2019/02/15/java/三目运算符的坑/">三目运算符</a></p>
+<h4 id="jcmd"><a href="#jcmd" class="headerlink" title="jcmd"></a>jcmd</h4><p>待补充</p>
+<h4 id="jconsole"><a href="#jconsole" class="headerlink" title="jconsole"></a>jconsole</h4><p>和jvisualvm功能相似,但jvisualvm功能更强<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">添加启动参数 -Djava.rmi.server.hostname&#x3D;192.168.0.83 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port&#x3D;9111 -Dcom.sun.management.jmxremote.ssl&#x3D;false -Dcom.sun.management.jmxremote.authenticate&#x3D;false</span><br></pre></td></tr></table></figure><br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0c06hz75cj30pg106djg.jpg" alt=""><br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0c07fv6r1j31bi0wudog.jpg" alt=""></p>
+<h4 id="jinfo"><a href="#jinfo" class="headerlink" title="jinfo"></a>jinfo</h4><p>主要作用是实时查看和调整JVM配置参数</p>
+<h5 id="查看jvm参数"><a href="#查看jvm参数" class="headerlink" title="查看jvm参数"></a>查看jvm参数</h5><ul>
+<li>jinfo -flag <name> PID<br>用法：jinfo -flag <name>  PID<br>例如：<br>jinfo -flag MaxMetaspaceSize 18348，得到结果-XX:MaxMetaspaceSize=536870912，即MaxMetaspaceSize为512M<br>jinfo -flag ThreadStackSize 18348，得到结果-XX:ThreadStackSize=256，即Xss为256K</li>
+</ul>
+<h5 id="修改jvm参数"><a href="#修改jvm参数" class="headerlink" title="修改jvm参数"></a>修改jvm参数</h5><p>如果是布尔类型的JVM参数: jinfo -flag [+|-]<name>  PID，enable or disable the named VM flag<br>如果是数字/字符串类型的JVM参数    jinfo  -flag <name>=<value> PID，to set the named VM flag to the given value</p>
+<h5 id="实时修改jvm参数"><a href="#实时修改jvm参数" class="headerlink" title="实时修改jvm参数"></a>实时修改jvm参数</h5><p>标记为manageable可以修改<br>java -XX:+PrintFlagsInitial | grep manageable<br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0c0unt4n4j313w0fudkv.jpg" alt=""></p>
+<h4 id="jmap"><a href="#jmap" class="headerlink" title="jmap"></a>jmap</h4><p>堆內存分析工具</p>
+<ul>
+<li>jmap -heap pid:查看堆使用情况</li>
+<li>jmap -histo pid：查看堆中对象数量和大小</li>
+<li>jmap -dump:format=b,file=heapdump pid：将内存使用的详细情况输出到文件</li>
+<li>jmap -dump:file=./dump.mdump pid<br>jdk8 的堆分析<br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0ea6y82r9j30i815oai0.jpg" alt=""></li>
+</ul>
+<h4 id="jps"><a href="#jps" class="headerlink" title="jps"></a>jps</h4><p>显示当前所有java线程</p>
+<ul>
+<li>用法:<blockquote>
+<p>╰─λ jps -help<br>  usage: jps [-help]</p>
+<pre><code>jps [-q] [-mlvV] [&lt;hostid&gt;]
+</code></pre><p>  Definitions:<br>  <hostid>:      <hostname>[:<port>]</p>
+</blockquote>
+</li>
+<li>jps -q 只显示pid，不显示class名称,jar文件名和传递给main 方法的参数</li>
+<li>jps -m 输出传递给main 方法的参数，在嵌入式jvm上可能是null</li>
+<li><strong>jps -l</strong> 输出应用程序main class的完整package名 或者 应用程序的jar文件完整路径名</li>
+<li><strong>jps -v</strong> 输出传递给JVM的参数</li>
+<li>jps -V 输出线程id和java命令<blockquote>
+<p>[root@k ~]# jps -V<br> 21547 Jps<br> 14799 jar</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="jstack"><a href="#jstack" class="headerlink" title="jstack"></a>jstack</h4><p>显示线程堆栈信息<br>主要目的是用于定位线程出现长时间停顿的原因，如线程间死锁、死循环、请求外部资源导致长时间等待。</p>
+<blockquote>
+<p>pid转换成16进制 printf “%x\n” pid<br>jstack -l PID &gt; jstack_pid.log<br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0eb1l59k7j31dq0hi443.jpg" alt=""></p>
+</blockquote>
+<h4 id="jstat"><a href="#jstat" class="headerlink" title="jstat"></a>jstat</h4><p><code>jstat -&lt;option&gt; [-t] [-h&lt;lines&gt;] &lt;vmid&gt; [&lt;interval&gt; [&lt;count&gt;]]</code><br><code>jstat -gcutil pid 2000 10</code><br><code>interval 毫秒</code></p>
+<ul>
+<li>jstat –class<pid> : 显示加载class的数量，及所占空间等信息</li>
+<li>jstat -compiler <pid>显示VM实时编译的数量等信息</li>
+<li>jstat -gc <pid>: 可以显示gc的信息，查看gc的次数，及时间</li>
+<li>jstat -gccapacity <pid>:可以显示，VM内存中三代（young,old,perm）对象的使用和占用大小</li>
+<li>jstat -gcutil <pid>:统计gc信息</li>
+<li>jstat -gcnew <pid>:年轻代对象的信息</li>
+<li>jstat -gcnewcapacity<pid>: 年轻代对象的信息及其占用量</li>
+<li>jstat -gcold <pid>：old代对象的信息</li>
+<li>jstat -gcoldcapacity <pid>: old代对象的信息及其占用量</li>
+<li>jstat -gcpermcapacity<pid>: perm对象的信息及其占用量</li>
+<li>jstat -printcompilation <pid>：当前VM执行的信息</li>
+</ul>
+]]></content>
+      <categories>
+        <category>java</category>
+        <category>java</category>
+      </categories>
+      <tags>
+        <tag>jdk</tag>
+        <tag>jvm</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>三目运算符的坑</title>
+    <url>/2019/02/15/java/20190215-%E4%B8%89%E7%9B%AE%E8%BF%90%E7%AE%97%E7%AC%A6%E7%9A%84%E5%9D%91/</url>
+    <content><![CDATA[<p>三目运算符中的坑不容易发现,看一段代码<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        Long test &#x3D; null;</span><br><span class="line">        Long a &#x3D;  2 &gt; 1 ? test  : 0L;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<p>Exception in thread “main” java.lang.NullPointerException<br>      at Test.main(Test.java:11)</p>
+</blockquote>
+<p>报的NPE,这个地方报NPE,着实想不到,只能看下字节码<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">javap -v Test.class &gt; output.txt</span><br></pre></td></tr></table></figure><br>结果是这样的<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public static void main(java.lang.String[]);</span><br><span class="line">   descriptor: ([Ljava&#x2F;lang&#x2F;String;)V</span><br><span class="line">   flags: ACC_PUBLIC, ACC_STATIC</span><br><span class="line">   Code:</span><br><span class="line">     stack&#x3D;2, locals&#x3D;3, args_size&#x3D;1</span><br><span class="line">        0: aconst_null</span><br><span class="line">        1: astore_1</span><br><span class="line">        2: aload_1</span><br><span class="line">        3: invokevirtual #2                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Long.longValue:()J</span><br><span class="line">        6: invokestatic  #3                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Long.valueOf:(J)Ljava&#x2F;lang&#x2F;Long;</span><br><span class="line">        9: astore_2</span><br><span class="line">       10: return</span><br><span class="line">     LineNumberTable:</span><br><span class="line">       line 10: 0</span><br><span class="line">       line 11: 2</span><br><span class="line">       line 12: 10</span><br><span class="line">     LocalVariableTable:</span><br><span class="line">       Start  Length  Slot  Name   Signature</span><br><span class="line">           0      11     0  args   [Ljava&#x2F;lang&#x2F;String;</span><br><span class="line">           2       9     1  test   Ljava&#x2F;lang&#x2F;Long;</span><br><span class="line">          10       1     2     a   Ljava&#x2F;lang&#x2F;Long;</span><br></pre></td></tr></table></figure><br>经过自动的拆箱和装箱,至于为何要经过这么一步处理 @Sun @Oracle 😂</p>
+]]></content>
+      <categories>
+        <category>java</category>
+        <category>java</category>
+      </categories>
+      <tags>
+        <tag>坑</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>page</title>
+    <url>/2019/04/24/java/20190424-%E5%8E%9F%E5%AD%90%E6%80%A7/</url>
+    <content><![CDATA[<ol>
+<li>synchronized</li>
+<li>volatile</li>
+<li>reentrantLock</li>
+<li>synchronized和reentrantLock的对比</li>
+<li>AQS底层怎么实现的</li>
+<li>赋值操作是原子的吗</li>
+<li>atomic包如何实现的？</li>
+</ol>
+]]></content>
+      <categories>
+        <category>java</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>page</title>
+    <url>/2019/04/24/java/20190424-%E7%BA%BF%E7%A8%8B%E6%B1%A0/</url>
+    <content><![CDATA[<h3 id="1-线程池如何实现的"><a href="#1-线程池如何实现的" class="headerlink" title="1. 线程池如何实现的"></a>1. 线程池如何实现的</h3><h3 id="2-线程池各个参数-重点队列"><a href="#2-线程池各个参数-重点队列" class="headerlink" title="2. 线程池各个参数 -重点队列"></a>2. 线程池各个参数 -重点队列</h3><h3 id="3-有界队列，无界队列如何实现的"><a href="#3-有界队列，无界队列如何实现的" class="headerlink" title="3. 有界队列，无界队列如何实现的"></a>3. 有界队列，无界队列如何实现的</h3>]]></content>
+      <categories>
+        <category>java</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>2018年度总结</title>
+    <url>/2019/01/31/life/20190131-2018%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>转眼间2018年已经过去,来XX公司也一年多了,这一年收获有,教训也有,年底了,来一波总结。从工作,学习到生活来记一记。<br>先说点大事,从三月份贸易战说起,和老美干了,嗯,还没结束,现金贷公司尸横遍野,接着房地产开始疲软,然后年底裁员潮,寒冬已至,同事已有被优化.2019也是不好过,干技术的还是要一直学习,时刻准备着.</p>
+<h2 id="工作"><a href="#工作" class="headerlink" title="工作"></a>工作</h2><p>上半年,做的创新项目没有赶上好时候,……,然后被安排做业务开发,当时对于业务系统不是太感冒,对业务也不熟悉,哩哩啦啦呆了一个月,然后去了其他部门,做了一些纯技术的工作.</p>
+<h2 id="学习"><a href="#学习" class="headerlink" title="学习"></a>学习</h2><p>从年初开始,把一些知识慢慢的捡起来,从jvm到多线程并发,java源码,然后mysql高级部分,把数据结构和算法也撸了一遍,后面看了zookeeper分布式相关,架构相关的书籍。从上层架构到底层实现基本上都了解了,后来在工作中也做了分布式相关的开发的工作.线上宕机问题排查解决.从理论到实践,技术再一点点的提升.</p>
+<h2 id="生活"><a href="#生活" class="headerlink" title="生活"></a>生活</h2><p>坚持健身,从4月份开始,一直到年底,每天一小时,虽说六块腹肌还没练出来,但是身体确实比之前好多了,腹肌也快出来了😂,2019继续练,在我的影响下,女票也加入健身队伍了,身体素质提升了不少.</p>
+<hr>
+<p>总体来说,18年是拼搏,付出,也是有收获的一年,祝愿2019年更上一层楼,家人身体健康,一切顺顺利利.<br><img src="http://ww1.sinaimg.cn/large/007DdbdYly1g03w0hatkxj31400u0dlk.jpg" alt=""></p>
+]]></content>
+      <categories>
+        <category>总结</category>
+        <category>life</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>2020年度总结</title>
+    <url>/2021/01/13/life/20210113-2020%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>2020新冠肺炎疫情原因，感觉过的很快。这一年在新的公司过的还可以，总的来说，是自我休息，调整的一年吧。</p>
+<h2 id="工作"><a href="#工作" class="headerlink" title="工作"></a>工作</h2><p>新公司开始做业务开发，新的业务，谈不上喜欢，也没有不喜欢，可能我的性格就是中庸，至于这个业务对自己未来发展有何帮助，<br>至少这个不会消失，但是对于公司这个业务是否一致存在，是个未知数。毕竟是传统的手机公司，但至少对于行情不好的光景，能<br>有个相对稳定的工作。至于工作压力大小周目前可以承受。</p>
+<h2 id="生活"><a href="#生活" class="headerlink" title="生活"></a>生活</h2><p>感觉2020还是比较散漫的，好多做了半道不得不停下来的，比如说软考，考研，2019年去了netease试用期就着手考研，那时的<br>部门环境是不太适合，但至少还是复习了数学，感觉可以搞定，这个硕士学位我是一定要拿到的，也许是买房结婚后，但是一定会<br>做。<br>脾气比之前大了，也许压力大了，事情比较多。另外18，19年确实比较累，技术知识学了挺多也是在补16，17年迷失的两年</p>
+<h2 id="学习"><a href="#学习" class="headerlink" title="学习"></a>学习</h2><p>2020年看了一些认知方面的书<br>《向上管理》<br>《沟通的艺术》<br>《万历十五年》<br>《高效能人士的7个习惯》没看完<br>《迷失的盛宴》<br>《非暴力沟通》<br>但是总结的太少，基本看过后没总结。这不太好，后面得慢慢改掉。</p>
+]]></content>
+      <categories>
+        <category>总结</category>
+        <category>life</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>mysql事务实现原理</title>
+    <url>/2019/02/13/mysql/20190213-mysql%E4%BA%8B%E5%8A%A1%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>mysql</category>
+        <category>mysql</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>记一次线上cpu过高问题排查</title>
+    <url>/2019/02/14/prd/20190214-%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BA%BF%E4%B8%8Acpu%E8%BF%87%E9%AB%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/</url>
+    <content><![CDATA[<h3 id="问题背景"><a href="#问题背景" class="headerlink" title="问题背景"></a>问题背景</h3>]]></content>
+      <categories>
+        <category>线上问题</category>
+        <category>prd</category>
+      </categories>
+      <tags>
+        <tag>jvm</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>spring知识点总结</title>
+    <url>/2019/02/13/spring/20190213-spring%E7%9F%A5%E8%AF%86%E7%82%B9%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<h3 id="1-bean生命周期"><a href="#1-bean生命周期" class="headerlink" title="1. bean生命周期"></a>1. bean生命周期</h3><p><img src="http://ww1.sinaimg.cn/large/007DdbdYly1g04kbgr6vlj31uo0tzdpq.jpg" alt=""></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Spring 容器根据配置中的 Bean Definition(定义)中对bean进行实例化</span><br><span class="line"></span><br><span class="line">spring将值和bean的引用引入到bean对应的属性中</span><br><span class="line"></span><br><span class="line">如果bean实现了BeanNameAware接口,spring将bean的id传递给setBeanName方法</span><br><span class="line"></span><br><span class="line">如果bean实现了BeanFactoryAware接口,spring将调用setBeanFactory方法引入beanFactory</span><br><span class="line"></span><br><span class="line">如果bean实现了BeanApplicationContextAware接口,spring将调用setApplicationContext方法引入applicationContext</span><br><span class="line"></span><br><span class="line">如果bean实现了BeanPostProcessor接口,spring将调用它们的postProcessBeforeInitialization方法 @PostConstruct注解的方法是由 CommonAnnotationBeanPostProcessor类处理,该类继承InitDestroyAnnotationBeanPostProcessor</span><br><span class="line">bean初始化和销毁的一个处理器</span><br><span class="line"></span><br><span class="line">如果bean实现了InitializingBean接口,spring将调用afterPropertiesSet方法</span><br><span class="line"></span><br><span class="line">如果bean使用init-method声明了初始化方法，该方法会被调用</span><br><span class="line"></span><br><span class="line">如果bean实现了BeanPostProcessor接口,spring将调用它们的postProcessAfterInitialization方法</span><br><span class="line"></span><br><span class="line">此时bean已经就绪,将一直存在上下文中,直到上下文销毁</span><br><span class="line"></span><br><span class="line">如果bean实现了DisposableBean接口,spring将调用destroy接口方法</span><br><span class="line"></span><br><span class="line">如果bean使用destroy-method声明了销毁方法,则该方法被调用</span><br></pre></td></tr></table></figure>
+<h3 id="2-初始化方法-销毁方法执行的先后顺序"><a href="#2-初始化方法-销毁方法执行的先后顺序" class="headerlink" title="2. 初始化方法,销毁方法执行的先后顺序"></a>2. 初始化方法,销毁方法执行的先后顺序</h3><ul>
+<li>初始化<br>(postProcessor)@PostConstruct -&gt; (InitializingBean)afterPropertiesSet -&gt; init-method声明的方法</li>
+<li>销毁<br>(postProcessor)@PreDestroy -&gt; (DisposableBean)destory -&gt; destroy-method声明的方法</li>
+</ul>
+<h3 id="3-spring容器-applicationContext和beanFactory的区别"><a href="#3-spring容器-applicationContext和beanFactory的区别" class="headerlink" title="3. spring容器 applicationContext和beanFactory的区别"></a>3. spring容器 applicationContext和beanFactory的区别</h3><p>Beanfactory 和 ApplicationContext是spring的两种IoC容器</p>
+<ul>
+<li>Beanfactory是简单的低级容器,提供IoC功能的实现,可以将它理解为一个map,通过getBean方法获取bean</li>
+<li>ApplicationContext是更高级的容器,抽象基类AbstractApplicationContext的子类AbstractRefreshableApplicationContext依赖DefaultListableBeanFactory,所以说IoC功能是beanFactory实现<br>根据applicationContext继承的接口可以发现,有如下功能<br>MessageSource:管理 message,实现国际化等功能。<br>ApplicationEventPublisher:事件发布。<br>ResourcePatternResolver:多资源加载。<br>EnvironmentCapable:系统 Environment（profile + Properties）相关。<br>Lifecycle:管理生命周期。<br>Closable:关闭,释放资源<br>InitializingBean:自定义初始化。<br>BeanNameAware:设置 beanName 的 Aware 接口。</li>
+<li>spring IoC 两个步骤<br>  a. 加载配置文件，解析成 BeanDefinition 放在 Map 里。<br>  b. 调用 getBean 的时候，从 BeanDefinition 所属的 Map 里，拿出 Class 对象进行实例化，同时，如果有依赖关系，将递归调用 getBean 方法 —— 完成依赖注入。<br>  实现机制:工厂模式加反射机制<br>对比:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">BeanFactory</th>
+<th style="text-align:left">ApplicationContext</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">它使用懒加载</td>
+<td style="text-align:left">启动时全部加载</td>
+</tr>
+<tr>
+<td style="text-align:left">它使用语法显式提供资源对象</td>
+<td style="text-align:left">它自己创建和管理资源对象</td>
+</tr>
+<tr>
+<td style="text-align:left">不支持国际化</td>
+<td style="text-align:left">支持国际化</td>
+</tr>
+<tr>
+<td style="text-align:left">不支持基于依赖的注解</td>
+<td style="text-align:left">支持基于依赖的注解</td>
+</tr>
+<tr>
+<td style="text-align:left">XmlBeanFactory</td>
+<td style="text-align:left">ClassPathXmlApplicationContext<br>FileSystemXmlApplicationContext<br>XmlWebApplicationContext<br>ConfigServletWebServerApplicationContext</td>
+</tr>
+</tbody>
+</table>
+<h3 id="Spring-框架中有哪些不同类型的事件？"><a href="#Spring-框架中有哪些不同类型的事件？" class="headerlink" title="Spring 框架中有哪些不同类型的事件？"></a>Spring 框架中有哪些不同类型的事件？</h3><p>五种标准的事件</p>
+<ul>
+<li>上下文更新事件（ContextRefreshedEvent）</li>
+<li>上下文开始事件（ContextStartedEvent）</li>
+<li>上下文停止事件（ContextStoppedEvent）</li>
+<li>上下文关闭事件（ContextClosedEvent）</li>
+<li>请求处理事件（RequestHandledEvent）<h3 id="4-spring中使用的设计模式"><a href="#4-spring中使用的设计模式" class="headerlink" title="4. spring中使用的设计模式"></a>4. spring中使用的设计模式</h3></li>
+<li>代理模式<br/><br>  网关的设计就是使用的代理模式<br/><br>  spring中AOP是基于jdk动态代理和动态字节码生成技术实现的,</li>
+<li>策略模式</li>
+</ul>
+<h3 id="5-aop实现原理"><a href="#5-aop实现原理" class="headerlink" title="5. aop实现原理"></a>5. aop实现原理</h3><blockquote>
+<p>   aop底层是通过动态代理机制和字节码生成技术即cglib实现.jdk动态代理实现,代理的类必须实现接口;字节码生成则是通过生成代理类的一个子类,子类覆盖父类方法,不管代理类有没有实现接口,但是对final方法无法覆写.<br/></p>
+</blockquote>
+<ul>
+<li><p>jdk动态代理</p>
+  <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x2F;&#x2F; 1. 首先实现一个InvocationHandler，方法调用会被转发到该类的invoke()方法。</span><br><span class="line">public class DynamicProxyHandler implements InvocationHandler &#123;</span><br><span class="line">    private Object proxied;</span><br><span class="line">    public DynamicProxyHandler(Object proxied) &#123;</span><br><span class="line">        System.out.println(&quot;dynamic proxy handler constuctor: &quot; + proxied.getClass());</span><br><span class="line">        this.proxied &#x3D; proxied;</span><br><span class="line">    &#125;</span><br><span class="line">    @Override</span><br><span class="line">    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable &#123;</span><br><span class="line">        System.out.println(&quot;dynamic proxy name: &quot; + proxy.getClass());</span><br><span class="line">        System.out.println(&quot;method: &quot; + method.getName());</span><br><span class="line">        System.out.println(&quot;args: &quot; + Arrays.toString(args));</span><br><span class="line">        </span><br><span class="line">        Object invokeObject &#x3D; method.invoke(proxied, args);</span><br><span class="line">        if (invokeObject !&#x3D; null) &#123;</span><br><span class="line">            System.out.println(&quot;invoke object: &quot; + invokeObject.getClass());</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            System.out.println(&quot;invoke object is null&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">        return invokeObject;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">&#x2F;&#x2F; 2.动态代理</span><br><span class="line">ClassLoader classLoader &#x3D; Interface.class.getClassLoader();</span><br><span class="line">Class&lt;?&gt;[] interfaces &#x3D; new Class[] &#123; Interface.class &#125;;</span><br><span class="line">InvocationHandler handler &#x3D; new DynamicProxyHandler(realObject);</span><br><span class="line">Interface proxy &#x3D; (Interface) Proxy.newProxyInstance(classLoader, interfaces, handler); </span><br><span class="line"> </span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>   loader，指定代理对象的类加载器<br>  interfaces，代理对象需要实现的接口，可以同时指定多个接口<br>  handler，方法调用的实际处理者，代理对象的方法调用都会转发到这里（注意1)<br>  newProxyInstance()会返回一个实现了指定接口的代理对象，对该对象的所有方法调用都会转发给InvocationHandler.invoke()方法。理解上述代码需要对Java反射机制有一定了解。动态代理神奇的地方就是代理对象是在程序运行时产生的，而不是编译期<br>  对代理对象的所有接口方法调用都会转发到InvocationHandler.invoke()方法，在invoke()方法里我们可以加入任何逻辑，比如修改方法参数，加入日志功能、安全检查功能等；之后我们通过某种方式执行真正的方法体，示例中通过反射调用了Hello对象的相应方法，还可以通过RPC调用远程方法。</p>
+</blockquote>
+</li>
+</ul>
+<ul>
+<li>动态字节码生成 cglib <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x2F;&#x2F; 1. 首先实现一个MethodInterceptor，方法调用会被转发到该类的intercept()方法。</span><br><span class="line">class MyMethodInterceptor implements MethodInterceptor&#123;</span><br><span class="line">  ...</span><br><span class="line">    @Override</span><br><span class="line">    public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable &#123;</span><br><span class="line">        logger.info(&quot;You said: &quot; + Arrays.toString(args));</span><br><span class="line">        return proxy.invokeSuper(obj, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">&#x2F;&#x2F; 2. 然后在需要使用HelloConcrete的时候，通过CGLIB动态代理获取代理对象。</span><br><span class="line">Enhancer enhancer &#x3D; new Enhancer();</span><br><span class="line">enhancer.setSuperclass(HelloConcrete.class);</span><br><span class="line">enhancer.setCallback(new MyMethodInterceptor());</span><br><span class="line"> </span><br><span class="line">HelloConcrete hello &#x3D; (HelloConcrete)enhancer.create();</span><br><span class="line">System.out.println(hello.sayHello(&quot;I love you!&quot;));</span><br></pre></td></tr></table></figure>
+<h3 id="6-sping如何解决循转依赖"><a href="#6-sping如何解决循转依赖" class="headerlink" title="6. sping如何解决循转依赖"></a>6. sping如何解决循转依赖</h3>循环依赖现象:A 依赖 B，B 依赖 C，C 依赖 A,然后A初始化时发现依赖B,则创建B;B初始化发现依赖C,则创建C;C发现依赖A,又创建A,形成无限循环.如下图所示:<br><img src="http://ww1.sinaimg.cn/large/007DdbdYly1g08ez3lvs3j308k06xdfv.jpg" alt=""><br>Spring 循环依赖的场景有两种：</li>
+</ul>
+<ul>
+<li>构造器的循环依赖。</li>
+<li>field 属性的循环依赖。</li>
+</ul>
+<blockquote>
+<p>对于构造器的循环依赖，Spring 是无法解决的，只能抛出 BeanCurrentlyInCreationException 异常表示循环依赖.<br>Spring 只解决 scope 为 singleton 的循环依赖。对于scope 为 prototype 的 bean ，Spring 无法解决，直接抛出 BeanCurrentlyInCreationException 异常</p>
+</blockquote>
+<h6 id="从AbstractBeanFactory-doGetBean方法开始"><a href="#从AbstractBeanFactory-doGetBean方法开始" class="headerlink" title="从AbstractBeanFactory doGetBean方法开始,"></a>从AbstractBeanFactory doGetBean方法开始,</h6><p><code>Object sharedInstance = getSingleton(beanName);</code><br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">@Override</span><br><span class="line">public Object getSingleton(String beanName) &#123;</span><br><span class="line">    return getSingleton(beanName, true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * Return the (raw) singleton object registered under the given name.</span><br><span class="line"> * &lt;p&gt;Checks already instantiated singletons and also allows for an early</span><br><span class="line"> * reference to a currently created singleton (resolving a circular reference).</span><br><span class="line"> * @param beanName the name of the bean to look for</span><br><span class="line"> * @param allowEarlyReference whether early references should be created or not</span><br><span class="line"> * @return the registered singleton object, or &#123;@code null&#125; if none found</span><br><span class="line"> *&#x2F;</span><br><span class="line">protected Object getSingleton(String beanName, boolean allowEarlyReference) &#123;</span><br><span class="line">    Object singletonObject &#x3D; this.singletonObjects.get(beanName);</span><br><span class="line">    if (singletonObject &#x3D;&#x3D; null &amp;&amp; isSingletonCurrentlyInCreation(beanName)) &#123;</span><br><span class="line">        synchronized (this.singletonObjects) &#123;</span><br><span class="line">            singletonObject &#x3D; this.earlySingletonObjects.get(beanName);</span><br><span class="line">            if (singletonObject &#x3D;&#x3D; null &amp;&amp; allowEarlyReference) &#123;</span><br><span class="line">                ObjectFactory&lt;?&gt; singletonFactory &#x3D; this.singletonFactories.get(beanName);</span><br><span class="line">                if (singletonFactory !&#x3D; null) &#123;</span><br><span class="line">                    singletonObject &#x3D; singletonFactory.getObject();</span><br><span class="line">                    this.earlySingletonObjects.put(beanName, singletonObject);</span><br><span class="line">                    this.singletonFactories.remove(beanName);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return (singletonObject !&#x3D; NULL_OBJECT ? singletonObject : null);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>getSingleton会从三个缓存中查,分别是:<code>singletonObjects、earlySingletonObjects、singletonFactories</code><br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * Cache of singleton objects: bean name to bean instance.</span><br><span class="line"> *</span><br><span class="line"> * 存放的是单例 bean 的映射。</span><br><span class="line"> *</span><br><span class="line"> * 对应关系为 bean name --&gt; bean instance</span><br><span class="line"> *&#x2F;</span><br><span class="line">private final Map&lt;String, Object&gt; singletonObjects &#x3D; new ConcurrentHashMap&lt;&gt;(256);</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * Cache of singleton factories: bean name to ObjectFactory.</span><br><span class="line"> *</span><br><span class="line"> * 存放的是【早期】的单例 bean 的映射。</span><br><span class="line"> *</span><br><span class="line"> * 对应关系也是 bean name --&gt; bean instance。</span><br><span class="line"> *</span><br><span class="line"> * 它与 &#123;@link #singletonObjects&#125; 的区别区别在，于 earlySingletonObjects 中存放的 bean 不一定是完整的。</span><br><span class="line"> *</span><br><span class="line"> * 从 &#123;@link #getSingleton(String)&#125; 方法中，中我们可以了解，bean 在创建过程中就已经加入到 earlySingletonObjects 中了，</span><br><span class="line"> * 所以当在 bean 的创建过程中就可以通过 getBean() 方法获取。</span><br><span class="line"> * 这个 Map 也是解决【循环依赖】的关键所在。</span><br><span class="line"> **&#x2F;</span><br><span class="line">private final Map&lt;String, Object&gt; earlySingletonObjects &#x3D; new HashMap&lt;&gt;(16);</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line">  * Cache of early singleton objects: bean name to bean instance.</span><br><span class="line">  *</span><br><span class="line">  * 存放的是 early objects 的映射，可以理解为创建单例 bean 的 factory 。</span><br><span class="line">  *</span><br><span class="line">  * 对应关系是 bean name --&gt; object</span><br><span class="line">  *&#x2F;</span><br><span class="line">private final Map&lt;String, ObjectFactory&lt;?&gt;&gt; singletonFactories &#x3D; new HashMap&lt;&gt;(16);</span><br></pre></td></tr></table></figure><br>这个三级缓存:</p>
+<ul>
+<li>第一级为 singletonObjects</li>
+<li>第二级为 earlySingletonObjects</li>
+<li>第三级为 singletonFactories<blockquote>
+<p>首先，从一级缓存 singletonObjects 获取。<br>如果，没有且当前指定的 beanName 正在创建，就再从二级缓存 earlySingletonObjects 中获取。<br>如果，还是没有获取到且允许 singletonFactories 通过 #getObject() 获取，则从三级缓存 singletonFactories 获取。如果获取到，则通过其 #getObject() 方法，获取对象，并将其加入到二级缓存 earlySingletonObjects 中，并从三级缓存 singletonFactories 删除</p>
+</blockquote>
+</li>
+</ul>
+<p><strong>关键点：添加至三级缓存</strong><br>使用bean的无参构造函数创建对象，并将其添加至三级缓存，这个时候的bean没有属性填充，但是bean已经存在了。</p>
+<p><strong>每一层缓存是 三级缓存中获取到 会添加至二级缓存,然后删除三级缓存,最终只会在一级缓存中存在</strong></p>
+<blockquote>
+<p>最终循环依赖 Spring 解决的过程：</p>
+<ul>
+<li>首先 A 完成初始化第一步并将自己提前曝光出来（通过 ObjectFactory 将自己提前曝光），在初始化的时候，发现自己依赖对象 B，此时就会去尝试 get(B)，这个时候发现 B 还没有被创建出来</li>
+<li>然后 B 就走创建流程，在 B 初始化的时候，同样发现自己依赖 C，C 也没有被创建出来</li>
+<li>这个时候 C 又开始初始化进程，但是在初始化的过程中发现自己依赖 A，于是尝试 get(A)，这个时候由于 A 已经添加至缓存中（一般都是添加至三级缓存 singletonFactories ），通过 ObjectFactory 提前曝光，所以可以通过 ObjectFactory#getObject() 方法来拿到 A 对象，C 拿到 A 对象后顺利完成初始化，然后将自己添加到一级缓存中</li>
+<li>回到 B ，B 也可以拿到 C 对象，完成初始化，A 可以顺利拿到 B 完成初始化。到这里整个链路就已经完成了初始化过程了</li>
+</ul>
+</blockquote>
+]]></content>
+      <categories>
+        <category>spring</category>
+        <category>spring</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>page</title>
+    <url>/2021/01/14/spring/20210114-springboot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%9001/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>spring</category>
+      </categories>
+  </entry>
+</search>
