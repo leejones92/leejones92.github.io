@@ -107,6 +107,51 @@
       </tags>
   </entry>
   <entry>
+    <title>2018年度总结</title>
+    <url>/2019/01/31/life/20190131-2018%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>转眼间2018年已经过去,来XX公司也一年多了,这一年收获有,教训也有,年底了,来一波总结。从工作,学习到生活来记一记。<br>先说点大事,从三月份贸易战说起,和老美干了,嗯,还没结束,现金贷公司尸横遍野,接着房地产开始疲软,然后年底裁员潮,寒冬已至,同事已有被优化.2019也是不好过,干技术的还是要一直学习,时刻准备着.</p>
+<h2 id="工作"><a href="#工作" class="headerlink" title="工作"></a>工作</h2><p>上半年,做的创新项目没有赶上好时候,……,然后被安排做业务开发,当时对于业务系统不是太感冒,对业务也不熟悉,哩哩啦啦呆了一个月,然后去了其他部门,做了一些纯技术的工作.</p>
+<h2 id="学习"><a href="#学习" class="headerlink" title="学习"></a>学习</h2><p>从年初开始,把一些知识慢慢的捡起来,从jvm到多线程并发,java源码,然后mysql高级部分,把数据结构和算法也撸了一遍,后面看了zookeeper分布式相关,架构相关的书籍。从上层架构到底层实现基本上都了解了,后来在工作中也做了分布式相关的开发的工作.线上宕机问题排查解决.从理论到实践,技术再一点点的提升.</p>
+<h2 id="生活"><a href="#生活" class="headerlink" title="生活"></a>生活</h2><p>坚持健身,从4月份开始,一直到年底,每天一小时,虽说六块腹肌还没练出来,但是身体确实比之前好多了,腹肌也快出来了😂,2019继续练,在我的影响下,女票也加入健身队伍了,身体素质提升了不少.</p>
+<hr>
+<p>总体来说,18年是拼搏,付出,也是有收获的一年,祝愿2019年更上一层楼,家人身体健康,一切顺顺利利.<br><img src="http://ww1.sinaimg.cn/large/007DdbdYly1g03w0hatkxj31400u0dlk.jpg" alt=""></p>
+]]></content>
+      <categories>
+        <category>总结</category>
+        <category>life</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>2020年度总结</title>
+    <url>/2021/01/13/life/20210113-2020%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>2020新冠肺炎疫情原因，感觉过的很快。这一年在新的公司过的还可以，总的来说，是自我休息，调整的一年吧。</p>
+<h2 id="工作"><a href="#工作" class="headerlink" title="工作"></a>工作</h2><p>新公司开始做业务开发，新的业务，谈不上喜欢，也没有不喜欢，可能我的性格就是中庸，至于这个业务对自己未来发展有何帮助，<br>至少这个不会消失，但是对于公司这个业务是否一致存在，是个未知数。毕竟是传统的手机公司，但至少对于行情不好的光景，能<br>有个相对稳定的工作。至于工作压力大小周目前可以承受。</p>
+<h2 id="生活"><a href="#生活" class="headerlink" title="生活"></a>生活</h2><p>感觉2020还是比较散漫的，好多做了半道不得不停下来的，比如说软考，考研，2019年去了netease试用期就着手考研，那时的<br>部门环境是不太适合，但至少还是复习了数学，感觉可以搞定，这个硕士学位我是一定要拿到的，也许是买房结婚后，但是一定会<br>做。<br>脾气比之前大了，也许压力大了，事情比较多。另外18，19年确实比较累，技术知识学了挺多也是在补16，17年迷失的两年</p>
+<h2 id="学习"><a href="#学习" class="headerlink" title="学习"></a>学习</h2><p>2020年看了一些认知方面的书<br>《向上管理》<br>《沟通的艺术》<br>《万历十五年》<br>《高效能人士的7个习惯》没看完<br>《迷失的盛宴》<br>《非暴力沟通》<br>但是总结的太少，基本看过后没总结。这不太好，后面得慢慢改掉。</p>
+]]></content>
+      <categories>
+        <category>总结</category>
+        <category>life</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>三目运算符的坑</title>
+    <url>/2019/02/15/java/20190215-%E4%B8%89%E7%9B%AE%E8%BF%90%E7%AE%97%E7%AC%A6%E7%9A%84%E5%9D%91/</url>
+    <content><![CDATA[<p>三目运算符中的坑不容易发现,看一段代码<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        Long test &#x3D; null;</span><br><span class="line">        Long a &#x3D;  2 &gt; 1 ? test  : 0L;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<p>Exception in thread “main” java.lang.NullPointerException<br>      at Test.main(Test.java:11)</p>
+</blockquote>
+<p>报的NPE,这个地方报NPE,着实想不到,只能看下字节码<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">javap -v Test.class &gt; output.txt</span><br></pre></td></tr></table></figure><br>结果是这样的<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public static void main(java.lang.String[]);</span><br><span class="line">   descriptor: ([Ljava&#x2F;lang&#x2F;String;)V</span><br><span class="line">   flags: ACC_PUBLIC, ACC_STATIC</span><br><span class="line">   Code:</span><br><span class="line">     stack&#x3D;2, locals&#x3D;3, args_size&#x3D;1</span><br><span class="line">        0: aconst_null</span><br><span class="line">        1: astore_1</span><br><span class="line">        2: aload_1</span><br><span class="line">        3: invokevirtual #2                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Long.longValue:()J</span><br><span class="line">        6: invokestatic  #3                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Long.valueOf:(J)Ljava&#x2F;lang&#x2F;Long;</span><br><span class="line">        9: astore_2</span><br><span class="line">       10: return</span><br><span class="line">     LineNumberTable:</span><br><span class="line">       line 10: 0</span><br><span class="line">       line 11: 2</span><br><span class="line">       line 12: 10</span><br><span class="line">     LocalVariableTable:</span><br><span class="line">       Start  Length  Slot  Name   Signature</span><br><span class="line">           0      11     0  args   [Ljava&#x2F;lang&#x2F;String;</span><br><span class="line">           2       9     1  test   Ljava&#x2F;lang&#x2F;Long;</span><br><span class="line">          10       1     2     a   Ljava&#x2F;lang&#x2F;Long;</span><br></pre></td></tr></table></figure><br>经过自动的拆箱和装箱,至于为何要经过这么一步处理 @Sun @Oracle 😂</p>
+]]></content>
+      <categories>
+        <category>java</category>
+        <category>java</category>
+      </categories>
+      <tags>
+        <tag>坑</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>jdk常用工具总结</title>
     <url>/2019/02/19/java/20190219-jdk%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7%E6%80%BB%E7%BB%93/</url>
     <content><![CDATA[<p>因为线上排查问题的需要,另一个也是基本技能,对java常用工具做一个小结.</p>
@@ -196,23 +241,6 @@
       </tags>
   </entry>
   <entry>
-    <title>三目运算符的坑</title>
-    <url>/2019/02/15/java/20190215-%E4%B8%89%E7%9B%AE%E8%BF%90%E7%AE%97%E7%AC%A6%E7%9A%84%E5%9D%91/</url>
-    <content><![CDATA[<p>三目运算符中的坑不容易发现,看一段代码<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        Long test &#x3D; null;</span><br><span class="line">        Long a &#x3D;  2 &gt; 1 ? test  : 0L;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<blockquote>
-<p>Exception in thread “main” java.lang.NullPointerException<br>      at Test.main(Test.java:11)</p>
-</blockquote>
-<p>报的NPE,这个地方报NPE,着实想不到,只能看下字节码<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">javap -v Test.class &gt; output.txt</span><br></pre></td></tr></table></figure><br>结果是这样的<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public static void main(java.lang.String[]);</span><br><span class="line">   descriptor: ([Ljava&#x2F;lang&#x2F;String;)V</span><br><span class="line">   flags: ACC_PUBLIC, ACC_STATIC</span><br><span class="line">   Code:</span><br><span class="line">     stack&#x3D;2, locals&#x3D;3, args_size&#x3D;1</span><br><span class="line">        0: aconst_null</span><br><span class="line">        1: astore_1</span><br><span class="line">        2: aload_1</span><br><span class="line">        3: invokevirtual #2                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Long.longValue:()J</span><br><span class="line">        6: invokestatic  #3                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Long.valueOf:(J)Ljava&#x2F;lang&#x2F;Long;</span><br><span class="line">        9: astore_2</span><br><span class="line">       10: return</span><br><span class="line">     LineNumberTable:</span><br><span class="line">       line 10: 0</span><br><span class="line">       line 11: 2</span><br><span class="line">       line 12: 10</span><br><span class="line">     LocalVariableTable:</span><br><span class="line">       Start  Length  Slot  Name   Signature</span><br><span class="line">           0      11     0  args   [Ljava&#x2F;lang&#x2F;String;</span><br><span class="line">           2       9     1  test   Ljava&#x2F;lang&#x2F;Long;</span><br><span class="line">          10       1     2     a   Ljava&#x2F;lang&#x2F;Long;</span><br></pre></td></tr></table></figure><br>经过自动的拆箱和装箱,至于为何要经过这么一步处理 @Sun @Oracle 😂</p>
-]]></content>
-      <categories>
-        <category>java</category>
-        <category>java</category>
-      </categories>
-      <tags>
-        <tag>坑</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>page</title>
     <url>/2019/04/24/java/20190424-%E5%8E%9F%E5%AD%90%E6%80%A7/</url>
     <content><![CDATA[<ol>
@@ -235,43 +263,6 @@
     <content><![CDATA[<h3 id="1-线程池如何实现的"><a href="#1-线程池如何实现的" class="headerlink" title="1. 线程池如何实现的"></a>1. 线程池如何实现的</h3><h3 id="2-线程池各个参数-重点队列"><a href="#2-线程池各个参数-重点队列" class="headerlink" title="2. 线程池各个参数 -重点队列"></a>2. 线程池各个参数 -重点队列</h3><h3 id="3-有界队列，无界队列如何实现的"><a href="#3-有界队列，无界队列如何实现的" class="headerlink" title="3. 有界队列，无界队列如何实现的"></a>3. 有界队列，无界队列如何实现的</h3>]]></content>
       <categories>
         <category>java</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>2018年度总结</title>
-    <url>/2019/01/31/life/20190131-2018%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<p>转眼间2018年已经过去,来XX公司也一年多了,这一年收获有,教训也有,年底了,来一波总结。从工作,学习到生活来记一记。<br>先说点大事,从三月份贸易战说起,和老美干了,嗯,还没结束,现金贷公司尸横遍野,接着房地产开始疲软,然后年底裁员潮,寒冬已至,同事已有被优化.2019也是不好过,干技术的还是要一直学习,时刻准备着.</p>
-<h2 id="工作"><a href="#工作" class="headerlink" title="工作"></a>工作</h2><p>上半年,做的创新项目没有赶上好时候,……,然后被安排做业务开发,当时对于业务系统不是太感冒,对业务也不熟悉,哩哩啦啦呆了一个月,然后去了其他部门,做了一些纯技术的工作.</p>
-<h2 id="学习"><a href="#学习" class="headerlink" title="学习"></a>学习</h2><p>从年初开始,把一些知识慢慢的捡起来,从jvm到多线程并发,java源码,然后mysql高级部分,把数据结构和算法也撸了一遍,后面看了zookeeper分布式相关,架构相关的书籍。从上层架构到底层实现基本上都了解了,后来在工作中也做了分布式相关的开发的工作.线上宕机问题排查解决.从理论到实践,技术再一点点的提升.</p>
-<h2 id="生活"><a href="#生活" class="headerlink" title="生活"></a>生活</h2><p>坚持健身,从4月份开始,一直到年底,每天一小时,虽说六块腹肌还没练出来,但是身体确实比之前好多了,腹肌也快出来了😂,2019继续练,在我的影响下,女票也加入健身队伍了,身体素质提升了不少.</p>
-<hr>
-<p>总体来说,18年是拼搏,付出,也是有收获的一年,祝愿2019年更上一层楼,家人身体健康,一切顺顺利利.<br><img src="http://ww1.sinaimg.cn/large/007DdbdYly1g03w0hatkxj31400u0dlk.jpg" alt=""></p>
-]]></content>
-      <categories>
-        <category>总结</category>
-        <category>life</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>2020年度总结</title>
-    <url>/2021/01/13/life/20210113-2020%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<p>2020新冠肺炎疫情原因，感觉过的很快。这一年在新的公司过的还可以，总的来说，是自我休息，调整的一年吧。</p>
-<h2 id="工作"><a href="#工作" class="headerlink" title="工作"></a>工作</h2><p>新公司开始做业务开发，新的业务，谈不上喜欢，也没有不喜欢，可能我的性格就是中庸，至于这个业务对自己未来发展有何帮助，<br>至少这个不会消失，但是对于公司这个业务是否一致存在，是个未知数。毕竟是传统的手机公司，但至少对于行情不好的光景，能<br>有个相对稳定的工作。至于工作压力大小周目前可以承受。</p>
-<h2 id="生活"><a href="#生活" class="headerlink" title="生活"></a>生活</h2><p>感觉2020还是比较散漫的，好多做了半道不得不停下来的，比如说软考，考研，2019年去了netease试用期就着手考研，那时的<br>部门环境是不太适合，但至少还是复习了数学，感觉可以搞定，这个硕士学位我是一定要拿到的，也许是买房结婚后，但是一定会<br>做。<br>脾气比之前大了，也许压力大了，事情比较多。另外18，19年确实比较累，技术知识学了挺多也是在补16，17年迷失的两年</p>
-<h2 id="学习"><a href="#学习" class="headerlink" title="学习"></a>学习</h2><p>2020年看了一些认知方面的书<br>《向上管理》<br>《沟通的艺术》<br>《万历十五年》<br>《高效能人士的7个习惯》没看完<br>《迷失的盛宴》<br>《非暴力沟通》<br>但是总结的太少，基本看过后没总结。这不太好，后面得慢慢改掉。</p>
-]]></content>
-      <categories>
-        <category>总结</category>
-        <category>life</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>mysql事务实现原理</title>
-    <url>/2019/02/13/mysql/20190213-mysql%E4%BA%8B%E5%8A%A1%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/</url>
-    <content><![CDATA[]]></content>
-      <categories>
-        <category>mysql</category>
-        <category>mysql</category>
       </categories>
   </entry>
   <entry>
@@ -395,6 +386,15 @@
     <content><![CDATA[]]></content>
       <categories>
         <category>spring</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>mysql事务实现原理</title>
+    <url>/2019/02/13/mysql/20190213-mysql%E4%BA%8B%E5%8A%A1%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>mysql</category>
+        <category>mysql</category>
       </categories>
   </entry>
 </search>
