@@ -24,6 +24,137 @@
       </categories>
   </entry>
   <entry>
+    <title>三目运算符的坑</title>
+    <url>/2019/02/15/java/20190215-%E4%B8%89%E7%9B%AE%E8%BF%90%E7%AE%97%E7%AC%A6%E7%9A%84%E5%9D%91/</url>
+    <content><![CDATA[<p>三目运算符中的坑不容易发现,看一段代码<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        Long test &#x3D; null;</span><br><span class="line">        Long a &#x3D;  2 &gt; 1 ? test  : 0L;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<p>Exception in thread “main” java.lang.NullPointerException<br>      at Test.main(Test.java:11)</p>
+</blockquote>
+<p>报的NPE,这个地方报NPE,着实想不到,只能看下字节码<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">javap -v Test.class &gt; output.txt</span><br></pre></td></tr></table></figure><br>结果是这样的<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public static void main(java.lang.String[]);</span><br><span class="line">   descriptor: ([Ljava&#x2F;lang&#x2F;String;)V</span><br><span class="line">   flags: ACC_PUBLIC, ACC_STATIC</span><br><span class="line">   Code:</span><br><span class="line">     stack&#x3D;2, locals&#x3D;3, args_size&#x3D;1</span><br><span class="line">        0: aconst_null</span><br><span class="line">        1: astore_1</span><br><span class="line">        2: aload_1</span><br><span class="line">        3: invokevirtual #2                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Long.longValue:()J</span><br><span class="line">        6: invokestatic  #3                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Long.valueOf:(J)Ljava&#x2F;lang&#x2F;Long;</span><br><span class="line">        9: astore_2</span><br><span class="line">       10: return</span><br><span class="line">     LineNumberTable:</span><br><span class="line">       line 10: 0</span><br><span class="line">       line 11: 2</span><br><span class="line">       line 12: 10</span><br><span class="line">     LocalVariableTable:</span><br><span class="line">       Start  Length  Slot  Name   Signature</span><br><span class="line">           0      11     0  args   [Ljava&#x2F;lang&#x2F;String;</span><br><span class="line">           2       9     1  test   Ljava&#x2F;lang&#x2F;Long;</span><br><span class="line">          10       1     2     a   Ljava&#x2F;lang&#x2F;Long;</span><br></pre></td></tr></table></figure><br>经过自动的拆箱和装箱,至于为何要经过这么一步处理 @Sun @Oracle 😂</p>
+]]></content>
+      <categories>
+        <category>java</category>
+        <category>java</category>
+      </categories>
+      <tags>
+        <tag>坑</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>page</title>
+    <url>/2019/04/24/java/20190424-%E5%8E%9F%E5%AD%90%E6%80%A7/</url>
+    <content><![CDATA[<ol>
+<li>synchronized</li>
+<li>volatile</li>
+<li>reentrantLock</li>
+<li>synchronized和reentrantLock的对比</li>
+<li>AQS底层怎么实现的</li>
+<li>赋值操作是原子的吗</li>
+<li>atomic包如何实现的？</li>
+</ol>
+]]></content>
+      <categories>
+        <category>java</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>jdk常用工具总结</title>
+    <url>/2019/02/19/java/20190219-jdk%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>因为线上排查问题的需要,另一个也是基本技能,对java常用工具做一个小结.</p>
+<h4 id="常用的工具"><a href="#常用的工具" class="headerlink" title="常用的工具"></a>常用的工具</h4><ul>
+<li>jar</li>
+<li>jarsigner        签名工具,可对未签名的apk进行签名</li>
+<li>java  </li>
+<li>javac             编译工具</li>
+<li>javadoc         生成doc文档工具</li>
+<li>javafxpackager    打包工具,可以生成.exe文件</li>
+<li>javap             查看.class文件的字节码</li>
+<li>javapackager     jdk1.7后自带的一个打包工具，可以生成本地exe安装包</li>
+<li>jcmd              打印一个 Java 进程的类，线程以及虚拟机信息。适合用在脚本中。使用 jcmd - h 来查看使用方法。</li>
+<li>jconsole           提供 JVM 活动的图形化展示，包括线程使用，类使用以及垃圾回收（GC）信息</li>
+<li>jdb             调试工具,比较牛逼</li>
+<li>jdeps             包依赖分析工具</li>
+<li>jhat              帮助分析内存堆存储</li>
+<li>jinfo             访问 JVM 系统属性，同时可以动态修改这些属性。</li>
+<li>jmap              提供 JVM 内存使用信息，适用于脚本中。</li>
+<li>jmc             性能监控工具</li>
+<li>jps             显示当前所有java进程pid的命令</li>
+<li>jstack            提供 Java 进程内的线程堆栈信息。</li>
+<li>jstat             提供 Java 垃圾回收以及类加载信息。</li>
+<li>jstatd          一个rmi的server应用，用于监控jvm的创建和结束，并且提供接口让监控工具（如visualvm）可以远程连接到本机的jvms</li>
+<li>jvisualvm         监控 JVM 的可视化工具，剖析运行中的应用程序，分析 JVM 堆存储。</li>
+</ul>
+<p>从常用的开始讲起</p>
+<h4 id="javap"><a href="#javap" class="headerlink" title="javap"></a>javap</h4><p><a href="/2019/02/15/java/三目运算符的坑/">三目运算符</a></p>
+<h4 id="jcmd"><a href="#jcmd" class="headerlink" title="jcmd"></a>jcmd</h4><p>待补充</p>
+<h4 id="jconsole"><a href="#jconsole" class="headerlink" title="jconsole"></a>jconsole</h4><p>和jvisualvm功能相似,但jvisualvm功能更强<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">添加启动参数 -Djava.rmi.server.hostname&#x3D;192.168.0.83 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port&#x3D;9111 -Dcom.sun.management.jmxremote.ssl&#x3D;false -Dcom.sun.management.jmxremote.authenticate&#x3D;false</span><br></pre></td></tr></table></figure><br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0c06hz75cj30pg106djg.jpg" alt=""><br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0c07fv6r1j31bi0wudog.jpg" alt=""></p>
+<h4 id="jinfo"><a href="#jinfo" class="headerlink" title="jinfo"></a>jinfo</h4><p>主要作用是实时查看和调整JVM配置参数</p>
+<h5 id="查看jvm参数"><a href="#查看jvm参数" class="headerlink" title="查看jvm参数"></a>查看jvm参数</h5><ul>
+<li>jinfo -flag <name> PID<br>用法：jinfo -flag <name>  PID<br>例如：<br>jinfo -flag MaxMetaspaceSize 18348，得到结果-XX:MaxMetaspaceSize=536870912，即MaxMetaspaceSize为512M<br>jinfo -flag ThreadStackSize 18348，得到结果-XX:ThreadStackSize=256，即Xss为256K</li>
+</ul>
+<h5 id="修改jvm参数"><a href="#修改jvm参数" class="headerlink" title="修改jvm参数"></a>修改jvm参数</h5><p>如果是布尔类型的JVM参数: jinfo -flag [+|-]<name>  PID，enable or disable the named VM flag<br>如果是数字/字符串类型的JVM参数    jinfo  -flag <name>=<value> PID，to set the named VM flag to the given value</p>
+<h5 id="实时修改jvm参数"><a href="#实时修改jvm参数" class="headerlink" title="实时修改jvm参数"></a>实时修改jvm参数</h5><p>标记为manageable可以修改<br>java -XX:+PrintFlagsInitial | grep manageable<br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0c0unt4n4j313w0fudkv.jpg" alt=""></p>
+<h4 id="jmap"><a href="#jmap" class="headerlink" title="jmap"></a>jmap</h4><p>堆內存分析工具</p>
+<ul>
+<li>jmap -heap pid:查看堆使用情况</li>
+<li>jmap -histo pid：查看堆中对象数量和大小</li>
+<li>jmap -dump:format=b,file=heapdump pid：将内存使用的详细情况输出到文件</li>
+<li>jmap -dump:file=./dump.mdump pid<br>jdk8 的堆分析<br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0ea6y82r9j30i815oai0.jpg" alt=""></li>
+</ul>
+<h4 id="jps"><a href="#jps" class="headerlink" title="jps"></a>jps</h4><p>显示当前所有java线程</p>
+<ul>
+<li>用法:<blockquote>
+<p>╰─λ jps -help<br>  usage: jps [-help]</p>
+<pre><code>jps [-q] [-mlvV] [&lt;hostid&gt;]
+</code></pre><p>  Definitions:<br>  <hostid>:      <hostname>[:<port>]</p>
+</blockquote>
+</li>
+<li>jps -q 只显示pid，不显示class名称,jar文件名和传递给main 方法的参数</li>
+<li>jps -m 输出传递给main 方法的参数，在嵌入式jvm上可能是null</li>
+<li><strong>jps -l</strong> 输出应用程序main class的完整package名 或者 应用程序的jar文件完整路径名</li>
+<li><strong>jps -v</strong> 输出传递给JVM的参数</li>
+<li>jps -V 输出线程id和java命令<blockquote>
+<p>[root@k ~]# jps -V<br> 21547 Jps<br> 14799 jar</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="jstack"><a href="#jstack" class="headerlink" title="jstack"></a>jstack</h4><p>显示线程堆栈信息<br>主要目的是用于定位线程出现长时间停顿的原因，如线程间死锁、死循环、请求外部资源导致长时间等待。</p>
+<blockquote>
+<p>pid转换成16进制 printf “%x\n” pid<br>jstack -l PID &gt; jstack_pid.log<br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0eb1l59k7j31dq0hi443.jpg" alt=""></p>
+</blockquote>
+<h4 id="jstat"><a href="#jstat" class="headerlink" title="jstat"></a>jstat</h4><p><code>jstat -&lt;option&gt; [-t] [-h&lt;lines&gt;] &lt;vmid&gt; [&lt;interval&gt; [&lt;count&gt;]]</code><br><code>jstat -gcutil pid 2000 10</code><br><code>interval 毫秒</code></p>
+<ul>
+<li>jstat –class<pid> : 显示加载class的数量，及所占空间等信息</li>
+<li>jstat -compiler <pid>显示VM实时编译的数量等信息</li>
+<li>jstat -gc <pid>: 可以显示gc的信息，查看gc的次数，及时间</li>
+<li>jstat -gccapacity <pid>:可以显示，VM内存中三代（young,old,perm）对象的使用和占用大小</li>
+<li>jstat -gcutil <pid>:统计gc信息</li>
+<li>jstat -gcnew <pid>:年轻代对象的信息</li>
+<li>jstat -gcnewcapacity<pid>: 年轻代对象的信息及其占用量</li>
+<li>jstat -gcold <pid>：old代对象的信息</li>
+<li>jstat -gcoldcapacity <pid>: old代对象的信息及其占用量</li>
+<li>jstat -gcpermcapacity<pid>: perm对象的信息及其占用量</li>
+<li>jstat -printcompilation <pid>：当前VM执行的信息</li>
+</ul>
+]]></content>
+      <categories>
+        <category>java</category>
+        <category>java</category>
+      </categories>
+      <tags>
+        <tag>jdk</tag>
+        <tag>jvm</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>page</title>
+    <url>/2019/04/24/java/20190424-%E7%BA%BF%E7%A8%8B%E6%B1%A0/</url>
+    <content><![CDATA[<h3 id="1-线程池如何实现的"><a href="#1-线程池如何实现的" class="headerlink" title="1. 线程池如何实现的"></a>1. 线程池如何实现的</h3><h3 id="2-线程池各个参数-重点队列"><a href="#2-线程池各个参数-重点队列" class="headerlink" title="2. 线程池各个参数 -重点队列"></a>2. 线程池各个参数 -重点队列</h3><h3 id="3-有界队列，无界队列如何实现的"><a href="#3-有界队列，无界队列如何实现的" class="headerlink" title="3. 有界队列，无界队列如何实现的"></a>3. 有界队列，无界队列如何实现的</h3>]]></content>
+      <categories>
+        <category>java</category>
+      </categories>
+  </entry>
+  <entry>
     <title>zk实现分布式锁</title>
     <url>/2019/04/22/distribute/20190422-zk%E5%AE%9E%E7%8E%B0%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/</url>
     <content><![CDATA[<h3 id="分布式锁实现"><a href="#分布式锁实现" class="headerlink" title="分布式锁实现"></a>分布式锁实现</h3><ul>
@@ -122,15 +253,6 @@
       </categories>
   </entry>
   <entry>
-    <title>mysql事务实现原理</title>
-    <url>/2019/02/13/mysql/20190213-mysql%E4%BA%8B%E5%8A%A1%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/</url>
-    <content><![CDATA[]]></content>
-      <categories>
-        <category>mysql</category>
-        <category>mysql</category>
-      </categories>
-  </entry>
-  <entry>
     <title>2020年度总结</title>
     <url>/2021/01/13/life/20210113-2020%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/</url>
     <content><![CDATA[<p>2020新冠肺炎疫情原因，感觉过的很快。这一年在新的公司过的还可以，总的来说，是自我休息，调整的一年吧。</p>
@@ -144,154 +266,12 @@
       </categories>
   </entry>
   <entry>
-    <title>三目运算符的坑</title>
-    <url>/2019/02/15/java/20190215-%E4%B8%89%E7%9B%AE%E8%BF%90%E7%AE%97%E7%AC%A6%E7%9A%84%E5%9D%91/</url>
-    <content><![CDATA[<p>三目运算符中的坑不容易发现,看一段代码<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        Long test &#x3D; null;</span><br><span class="line">        Long a &#x3D;  2 &gt; 1 ? test  : 0L;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<blockquote>
-<p>Exception in thread “main” java.lang.NullPointerException<br>      at Test.main(Test.java:11)</p>
-</blockquote>
-<p>报的NPE,这个地方报NPE,着实想不到,只能看下字节码<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">javap -v Test.class &gt; output.txt</span><br></pre></td></tr></table></figure><br>结果是这样的<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public static void main(java.lang.String[]);</span><br><span class="line">   descriptor: ([Ljava&#x2F;lang&#x2F;String;)V</span><br><span class="line">   flags: ACC_PUBLIC, ACC_STATIC</span><br><span class="line">   Code:</span><br><span class="line">     stack&#x3D;2, locals&#x3D;3, args_size&#x3D;1</span><br><span class="line">        0: aconst_null</span><br><span class="line">        1: astore_1</span><br><span class="line">        2: aload_1</span><br><span class="line">        3: invokevirtual #2                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Long.longValue:()J</span><br><span class="line">        6: invokestatic  #3                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Long.valueOf:(J)Ljava&#x2F;lang&#x2F;Long;</span><br><span class="line">        9: astore_2</span><br><span class="line">       10: return</span><br><span class="line">     LineNumberTable:</span><br><span class="line">       line 10: 0</span><br><span class="line">       line 11: 2</span><br><span class="line">       line 12: 10</span><br><span class="line">     LocalVariableTable:</span><br><span class="line">       Start  Length  Slot  Name   Signature</span><br><span class="line">           0      11     0  args   [Ljava&#x2F;lang&#x2F;String;</span><br><span class="line">           2       9     1  test   Ljava&#x2F;lang&#x2F;Long;</span><br><span class="line">          10       1     2     a   Ljava&#x2F;lang&#x2F;Long;</span><br></pre></td></tr></table></figure><br>经过自动的拆箱和装箱,至于为何要经过这么一步处理 @Sun @Oracle 😂</p>
-]]></content>
-      <categories>
-        <category>java</category>
-        <category>java</category>
-      </categories>
-      <tags>
-        <tag>坑</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>jdk常用工具总结</title>
-    <url>/2019/02/19/java/20190219-jdk%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<p>因为线上排查问题的需要,另一个也是基本技能,对java常用工具做一个小结.</p>
-<h4 id="常用的工具"><a href="#常用的工具" class="headerlink" title="常用的工具"></a>常用的工具</h4><ul>
-<li>jar</li>
-<li>jarsigner        签名工具,可对未签名的apk进行签名</li>
-<li>java  </li>
-<li>javac             编译工具</li>
-<li>javadoc         生成doc文档工具</li>
-<li>javafxpackager    打包工具,可以生成.exe文件</li>
-<li>javap             查看.class文件的字节码</li>
-<li>javapackager     jdk1.7后自带的一个打包工具，可以生成本地exe安装包</li>
-<li>jcmd              打印一个 Java 进程的类，线程以及虚拟机信息。适合用在脚本中。使用 jcmd - h 来查看使用方法。</li>
-<li>jconsole           提供 JVM 活动的图形化展示，包括线程使用，类使用以及垃圾回收（GC）信息</li>
-<li>jdb             调试工具,比较牛逼</li>
-<li>jdeps             包依赖分析工具</li>
-<li>jhat              帮助分析内存堆存储</li>
-<li>jinfo             访问 JVM 系统属性，同时可以动态修改这些属性。</li>
-<li>jmap              提供 JVM 内存使用信息，适用于脚本中。</li>
-<li>jmc             性能监控工具</li>
-<li>jps             显示当前所有java进程pid的命令</li>
-<li>jstack            提供 Java 进程内的线程堆栈信息。</li>
-<li>jstat             提供 Java 垃圾回收以及类加载信息。</li>
-<li>jstatd          一个rmi的server应用，用于监控jvm的创建和结束，并且提供接口让监控工具（如visualvm）可以远程连接到本机的jvms</li>
-<li>jvisualvm         监控 JVM 的可视化工具，剖析运行中的应用程序，分析 JVM 堆存储。</li>
-</ul>
-<p>从常用的开始讲起</p>
-<h4 id="javap"><a href="#javap" class="headerlink" title="javap"></a>javap</h4><p><a href="/2019/02/15/java/三目运算符的坑/">三目运算符</a></p>
-<h4 id="jcmd"><a href="#jcmd" class="headerlink" title="jcmd"></a>jcmd</h4><p>待补充</p>
-<h4 id="jconsole"><a href="#jconsole" class="headerlink" title="jconsole"></a>jconsole</h4><p>和jvisualvm功能相似,但jvisualvm功能更强<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">添加启动参数 -Djava.rmi.server.hostname&#x3D;192.168.0.83 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port&#x3D;9111 -Dcom.sun.management.jmxremote.ssl&#x3D;false -Dcom.sun.management.jmxremote.authenticate&#x3D;false</span><br></pre></td></tr></table></figure><br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0c06hz75cj30pg106djg.jpg" alt=""><br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0c07fv6r1j31bi0wudog.jpg" alt=""></p>
-<h4 id="jinfo"><a href="#jinfo" class="headerlink" title="jinfo"></a>jinfo</h4><p>主要作用是实时查看和调整JVM配置参数</p>
-<h5 id="查看jvm参数"><a href="#查看jvm参数" class="headerlink" title="查看jvm参数"></a>查看jvm参数</h5><ul>
-<li>jinfo -flag <name> PID<br>用法：jinfo -flag <name>  PID<br>例如：<br>jinfo -flag MaxMetaspaceSize 18348，得到结果-XX:MaxMetaspaceSize=536870912，即MaxMetaspaceSize为512M<br>jinfo -flag ThreadStackSize 18348，得到结果-XX:ThreadStackSize=256，即Xss为256K</li>
-</ul>
-<h5 id="修改jvm参数"><a href="#修改jvm参数" class="headerlink" title="修改jvm参数"></a>修改jvm参数</h5><p>如果是布尔类型的JVM参数: jinfo -flag [+|-]<name>  PID，enable or disable the named VM flag<br>如果是数字/字符串类型的JVM参数    jinfo  -flag <name>=<value> PID，to set the named VM flag to the given value</p>
-<h5 id="实时修改jvm参数"><a href="#实时修改jvm参数" class="headerlink" title="实时修改jvm参数"></a>实时修改jvm参数</h5><p>标记为manageable可以修改<br>java -XX:+PrintFlagsInitial | grep manageable<br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0c0unt4n4j313w0fudkv.jpg" alt=""></p>
-<h4 id="jmap"><a href="#jmap" class="headerlink" title="jmap"></a>jmap</h4><p>堆內存分析工具</p>
-<ul>
-<li>jmap -heap pid:查看堆使用情况</li>
-<li>jmap -histo pid：查看堆中对象数量和大小</li>
-<li>jmap -dump:format=b,file=heapdump pid：将内存使用的详细情况输出到文件</li>
-<li>jmap -dump:file=./dump.mdump pid<br>jdk8 的堆分析<br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0ea6y82r9j30i815oai0.jpg" alt=""></li>
-</ul>
-<h4 id="jps"><a href="#jps" class="headerlink" title="jps"></a>jps</h4><p>显示当前所有java线程</p>
-<ul>
-<li>用法:<blockquote>
-<p>╰─λ jps -help<br>  usage: jps [-help]</p>
-<pre><code>jps [-q] [-mlvV] [&lt;hostid&gt;]
-</code></pre><p>  Definitions:<br>  <hostid>:      <hostname>[:<port>]</p>
-</blockquote>
-</li>
-<li>jps -q 只显示pid，不显示class名称,jar文件名和传递给main 方法的参数</li>
-<li>jps -m 输出传递给main 方法的参数，在嵌入式jvm上可能是null</li>
-<li><strong>jps -l</strong> 输出应用程序main class的完整package名 或者 应用程序的jar文件完整路径名</li>
-<li><strong>jps -v</strong> 输出传递给JVM的参数</li>
-<li>jps -V 输出线程id和java命令<blockquote>
-<p>[root@k ~]# jps -V<br> 21547 Jps<br> 14799 jar</p>
-</blockquote>
-</li>
-</ul>
-<h4 id="jstack"><a href="#jstack" class="headerlink" title="jstack"></a>jstack</h4><p>显示线程堆栈信息<br>主要目的是用于定位线程出现长时间停顿的原因，如线程间死锁、死循环、请求外部资源导致长时间等待。</p>
-<blockquote>
-<p>pid转换成16进制 printf “%x\n” pid<br>jstack -l PID &gt; jstack_pid.log<br><img src="http://ww1.sinaimg.cn/mw690/007DdbdYly1g0eb1l59k7j31dq0hi443.jpg" alt=""></p>
-</blockquote>
-<h4 id="jstat"><a href="#jstat" class="headerlink" title="jstat"></a>jstat</h4><p><code>jstat -&lt;option&gt; [-t] [-h&lt;lines&gt;] &lt;vmid&gt; [&lt;interval&gt; [&lt;count&gt;]]</code><br><code>jstat -gcutil pid 2000 10</code><br><code>interval 毫秒</code></p>
-<ul>
-<li>jstat –class<pid> : 显示加载class的数量，及所占空间等信息</li>
-<li>jstat -compiler <pid>显示VM实时编译的数量等信息</li>
-<li>jstat -gc <pid>: 可以显示gc的信息，查看gc的次数，及时间</li>
-<li>jstat -gccapacity <pid>:可以显示，VM内存中三代（young,old,perm）对象的使用和占用大小</li>
-<li>jstat -gcutil <pid>:统计gc信息</li>
-<li>jstat -gcnew <pid>:年轻代对象的信息</li>
-<li>jstat -gcnewcapacity<pid>: 年轻代对象的信息及其占用量</li>
-<li>jstat -gcold <pid>：old代对象的信息</li>
-<li>jstat -gcoldcapacity <pid>: old代对象的信息及其占用量</li>
-<li>jstat -gcpermcapacity<pid>: perm对象的信息及其占用量</li>
-<li>jstat -printcompilation <pid>：当前VM执行的信息</li>
-</ul>
-]]></content>
-      <categories>
-        <category>java</category>
-        <category>java</category>
-      </categories>
-      <tags>
-        <tag>jdk</tag>
-        <tag>jvm</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>page</title>
-    <url>/2019/04/24/java/20190424-%E5%8E%9F%E5%AD%90%E6%80%A7/</url>
-    <content><![CDATA[<ol>
-<li>synchronized</li>
-<li>volatile</li>
-<li>reentrantLock</li>
-<li>synchronized和reentrantLock的对比</li>
-<li>AQS底层怎么实现的</li>
-<li>赋值操作是原子的吗</li>
-<li>atomic包如何实现的？</li>
-</ol>
-]]></content>
-      <categories>
-        <category>java</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>page</title>
-    <url>/2019/04/24/java/20190424-%E7%BA%BF%E7%A8%8B%E6%B1%A0/</url>
-    <content><![CDATA[<h3 id="1-线程池如何实现的"><a href="#1-线程池如何实现的" class="headerlink" title="1. 线程池如何实现的"></a>1. 线程池如何实现的</h3><h3 id="2-线程池各个参数-重点队列"><a href="#2-线程池各个参数-重点队列" class="headerlink" title="2. 线程池各个参数 -重点队列"></a>2. 线程池各个参数 -重点队列</h3><h3 id="3-有界队列，无界队列如何实现的"><a href="#3-有界队列，无界队列如何实现的" class="headerlink" title="3. 有界队列，无界队列如何实现的"></a>3. 有界队列，无界队列如何实现的</h3>]]></content>
-      <categories>
-        <category>java</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>记一次线上cpu过高问题排查</title>
-    <url>/2019/02/14/prd/20190214-%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BA%BF%E4%B8%8Acpu%E8%BF%87%E9%AB%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/</url>
-    <content><![CDATA[<h3 id="问题背景"><a href="#问题背景" class="headerlink" title="问题背景"></a>问题背景</h3>]]></content>
-      <categories>
-        <category>线上问题</category>
-        <category>prd</category>
-      </categories>
-      <tags>
-        <tag>jvm</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>page</title>
-    <url>/2021/01/14/spring/20210114-springboot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%9001/</url>
+    <title>mysql事务实现原理</title>
+    <url>/2019/02/13/mysql/20190213-mysql%E4%BA%8B%E5%8A%A1%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/</url>
     <content><![CDATA[]]></content>
       <categories>
-        <category>spring</category>
+        <category>mysql</category>
+        <category>mysql</category>
       </categories>
   </entry>
   <entry>
@@ -394,6 +374,26 @@
 ]]></content>
       <categories>
         <category>spring</category>
+        <category>spring</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>记一次线上cpu过高问题排查</title>
+    <url>/2019/02/14/prd/20190214-%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BA%BF%E4%B8%8Acpu%E8%BF%87%E9%AB%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/</url>
+    <content><![CDATA[<h3 id="问题背景"><a href="#问题背景" class="headerlink" title="问题背景"></a>问题背景</h3>]]></content>
+      <categories>
+        <category>线上问题</category>
+        <category>prd</category>
+      </categories>
+      <tags>
+        <tag>jvm</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>page</title>
+    <url>/2021/01/14/spring/20210114-springboot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%9001/</url>
+    <content><![CDATA[]]></content>
+      <categories>
         <category>spring</category>
       </categories>
   </entry>
